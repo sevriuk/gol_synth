@@ -7,6 +7,7 @@ import sounddevice as sd
 from scipy.signal import convolve2d
 from scipy.io.wavfile import write
 import os
+from tkinter import filedialog
 
 # Config for 3 octaves of piano (C3 to B5)
 ROWS, COLS = 36, 36
@@ -28,8 +29,22 @@ class SoundLife:
         self.canvas = tk.Canvas(master, width=COLS * CELL_SIZE, height=ROWS * CELL_SIZE, bg="black")
         self.canvas.pack()
 
-        self.start_button = tk.Button(master, text="Start", command=self.toggle_running)
-        self.start_button.pack(pady=10)
+        # Button row container
+        button_frame = tk.Frame(master)
+        button_frame.pack(pady=10)
+
+        self.start_button = tk.Button(button_frame, text="Start", command=self.toggle_running)
+        self.start_button.pack(side=tk.LEFT, padx=5)
+
+        self.erase_button = tk.Button(button_frame, text="Erase", command=self.erase_grid)
+        self.erase_button.pack(side=tk.LEFT, padx=5)
+
+        self.save_button = tk.Button(button_frame, text="Save Preset", command=self.save_preset)
+        self.save_button.pack(side=tk.LEFT, padx=5)
+
+        self.load_button = tk.Button(button_frame, text="Load Preset", command=self.load_preset)
+        self.load_button.pack(side=tk.LEFT, padx=5)
+
 
         self.running = False
         self.canvas.bind("<Button-1>", self.toggle_cell)
@@ -142,12 +157,35 @@ class SoundLife:
         write(filename, SAMPLE_RATE, full_audio)
         print(f"Saved: {filename}")
 
+    def erase_grid(self):
+        self.grid = np.zeros((ROWS, COLS), dtype=int)
+        self.draw_grid()
+
+    def save_preset(self):
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".npy",
+            filetypes=[("NumPy arrays", "*.npy")],
+            title="Save Preset"
+        )
+        if file_path:
+            np.save(file_path, self.grid)
+            print(f"Preset saved to {file_path}")
+
+    def load_preset(self):
+        file_path = filedialog.askopenfilename(
+            defaultextension=".npy",
+            filetypes=[("NumPy arrays", "*.npy")],
+            title="Load Preset"
+        )
+        if file_path and os.path.exists(file_path):
+            self.grid = np.load(file_path)
+            self.draw_grid()
+            print(f"Preset loaded from {file_path}")
+
 # Run
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Game of Life with Piano Sound (36x36 Grid)")
     app = SoundLife(root)
     root.mainloop()
-
-
 
